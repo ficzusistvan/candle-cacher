@@ -1,0 +1,16 @@
+{
+  "http_port": 3000,
+  "data_source": "xapi",
+  "xapi": {
+    "user_id": 111,
+    "password": "xxx"
+  },
+  "symbols_and_periods": ["DE30_5"],
+  "pushbullet_api_key": "xxx",
+  "mysql" : {
+    "host": "localhost",
+    "user": "root",
+    "password": "password",
+    "db": "mydb"
+  }
+}
