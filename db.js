@@ -88,7 +88,7 @@ downloadCandles = function (symbol, period, startTime, LOG_ID) {
         }
       } else {
         console.log(LOG_ID + 'Rejecting:', data);
-        pusher.note(DEVICE_ID, 'Candle cacher', JSON.stringify(data), (error, response) => {
+        pusher.note(DEVICE_ID, LOG_ID + 'Candle cacher', JSON.stringify(data), (error, response) => {
           console.log(LOG_ID + 'Pusher error:', error);
           if (error !== null) {
             console.log(LOG_ID + 'Pusher response:', response);
@@ -127,7 +127,7 @@ exports.cacheCandles = async function () {
     values = values.slice(0, -1) + ' ON DUPLICATE KEY UPDATE date=date, ctm=ctm, ctmString=ctmString, open=open, high=high, low=low, close=close, volume=volume, period=period';
     await pool.query('INSERT INTO ' + SYMBOL + ' (date, ctm, ctmString, open, high, low, close, volume, period) VALUES ' + values);
     console.log(LOG_ID + 'Cached ' + downloadedCandles.length + ' new candles...');
-    pusher.note(DEVICE_ID, 'Candle cacher', 'Cached ' + downloadedCandles.length + ' new candles...', (error, response) => {
+    pusher.note(DEVICE_ID, LOG_ID + 'Candle cacher', 'Cached ' + downloadedCandles.length + ' new candles...', (error, response) => {
       console.log(LOG_ID + 'Pusher error:', error);
       if (error !== null) {
         console.log(LOG_ID + 'Pusher response:', response);
