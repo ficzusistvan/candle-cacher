@@ -2,7 +2,7 @@ var express = require('express');
 var router = express.Router();
 var db = require('../db');
 
-router.get('/candles/test', async function(req, res, next) {
+router.get('/candles/force-cache-update', async function(req, res, next) {
   await db.cacheCandles();
   res.send('Finished...');
 });

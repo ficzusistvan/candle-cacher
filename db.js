@@ -22,6 +22,16 @@ const SYMBOLS_AND_PERIODS = nconf.get('symbols_and_periods');
 const USER_ID = nconf.get('xapi:user_id');
 const PASSWORD = nconf.get('xapi:password');
 const DEVICE_ID = nconf.get('pushbullet:device_id');
+const SINCE = new Map(); // key: period in minutes, value: months of history data supported
+SINCE.set(1, 1);
+SINCE.set(5, 1);
+SINCE.set(15, 1);
+SINCE.set(30, 7);
+SINCE.set(60, 7);
+SINCE.set(240, 13);
+SINCE.set(1440, 13);
+SINCE.set(10080, 60);
+SINCE.set(43200, 60);
 
 let normalizeCandles = function (candles, scale) {
   return candles.map(candle => {
@@ -77,7 +87,8 @@ downloadCandles = function (symbol, period, startTime) {
           resolve(normalizeCandles(data.returnData.rateInfos, Math.pow(10, data.returnData.digits)));
         }
       } else {
-        pusher.note(DEVICE_ID, 'Candle cacher', data, (error, response) => {
+        console.log('Rejecting:', data);
+        pusher.note(DEVICE_ID, 'Candle cacher', JSON.stringify(data), (error, response) => {
           console.log('Pusher error:', error);
           console.log('Pusher response:', response);
         });
@@ -101,9 +112,9 @@ exports.cacheCandles = async function () {
     console.log('Handling symbol and period:', SYMBOL_AND_PERIOD);
     const SYMBOL = SYMBOL_AND_PERIOD.split('_')[0];
     const PERIOD = Number(SYMBOL_AND_PERIOD.split('_')[1]);
-    const existingCandles = await pool.query('SELECT date FROM ' + SYMBOL + ' ORDER BY date DESC LIMIT 1');
+    const existingCandles = await pool.query('SELECT date FROM ' + SYMBOL + ' WHERE period = ' + PERIOD + ' ORDER BY date DESC LIMIT 1');
     console.log('Last cached candle date:', existingCandles[0]);
-    const startTime = existingCandles[0].length > 0 ? existingCandles[0][0].date : moment().subtract(2, 'months').valueOf();
+    const startTime = existingCandles[0].length > 0 ? existingCandles[0][0].date : moment().subtract(SINCE.get(PERIOD), 'month').valueOf();
     const downloadedCandles = await downloadCandles(SYMBOL, PERIOD, startTime);
     console.log('Downloaded candles length:', downloadedCandles.length);
     let values = '';
