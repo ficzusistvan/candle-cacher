@@ -118,7 +118,7 @@ exports.cacheCandles = async function () {
     const existingCandles = await pool.query('SELECT date FROM ' + SYMBOL + ' WHERE period = ' + PERIOD + ' ORDER BY date DESC LIMIT 1');
     console.log(LOG_ID + 'Last cached candle date:', existingCandles[0]);
     const startTime = existingCandles[0].length > 0 ? existingCandles[0][0].date : moment().subtract(SINCE.get(PERIOD), 'month').valueOf();
-    const downloadedCandles = await downloadCandles(SYMBOL, PERIOD, startTime);
+    const downloadedCandles = await downloadCandles(SYMBOL, PERIOD, startTime, LOG_ID);
     console.log(LOG_ID + 'Downloaded candles length:', downloadedCandles.length);
     let values = '';
     for (let candle of downloadedCandles) {
