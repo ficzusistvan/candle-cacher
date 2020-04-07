@@ -6,7 +6,10 @@
     "password": "xxx"
   },
   "symbols_and_periods": ["DE30_5"],
-  "pushbullet_api_key": "xxx",
+  "pushbullet": {
+    "api_key": "xxx",
+    "device_id": "yyy"
+  },
   "mysql" : {
     "host": "localhost",
     "user": "root",

@@ -5,7 +5,7 @@ var logger = require('morgan');
 
 var indexRouter = require('./routes/index');
 
-//var jobs = require('./jobs');
+var jobs = require('./jobs');
 
 var app = express();
 
