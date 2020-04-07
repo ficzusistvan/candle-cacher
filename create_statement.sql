@@ -10,4 +10,3 @@ CREATE TABLE `de30` (
   `period` int(11) NOT NULL,
   PRIMARY KEY (`date`,`period`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8;
-SELECT * FROM candle_cacher.de30;
