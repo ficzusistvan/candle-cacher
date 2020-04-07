@@ -50,11 +50,11 @@ let normalizeCandles = function (candles, scale) {
   });
 }
 
-downloadCandles = function (symbol, period, startTime) {
+downloadCandles = function (symbol, period, startTime, LOG_ID) {
   const ws = new WebSocket(WS_ADDRESS);
   return new Promise((resolve, reject) => {
     ws.addEventListener('open', () => {
-      console.log('Logging in... user_id: [' + USER_ID + '] password: [' + PASSWORD + ']');
+      console.log(LOG_ID + 'Logging in... user_id: [' + USER_ID + '] password: [' + PASSWORD + ']');
       let msg = {
         command: "login",
         arguments: {
@@ -69,7 +69,7 @@ downloadCandles = function (symbol, period, startTime) {
       //console.log('ws message:', msg.data);
       if (data.status === true) {
         if (data.streamSessionId !== undefined) {
-          console.log('Logged in! Downloading candles... symbol: [' + symbol + '] period: [' + period + '] startTime: [' + startTime + ']');
+          console.log(LOG_ID + 'Logged in! Downloading candles... symbol: [' + symbol + '] period: [' + period + '] startTime: [' + startTime + ']');
           let msg = {
             command: "getChartLastRequest",
             arguments: {
@@ -82,26 +82,28 @@ downloadCandles = function (symbol, period, startTime) {
           };
           ws.send(JSON.stringify(msg));
         } else {
-          console.log('Candles downloaded! Returning promise...');
+          console.log(LOG_ID + 'Candles downloaded! Returning promise...');
           ws.close();
           resolve(normalizeCandles(data.returnData.rateInfos, Math.pow(10, data.returnData.digits)));
         }
       } else {
-        console.log('Rejecting:', data);
+        console.log(LOG_ID + 'Rejecting:', data);
         pusher.note(DEVICE_ID, 'Candle cacher', JSON.stringify(data), (error, response) => {
-          console.log('Pusher error:', error);
-          console.log('Pusher response:', response);
+          console.log(LOG_ID + 'Pusher error:', error);
+          if (error !== null) {
+            console.log(LOG_ID + 'Pusher response:', response);
+          }
         });
         reject(data);
       }
     });
     ws.addEventListener('close', () => {
-      console.log('ws closed...');
+      console.log(LOG_ID + 'ws closed...');
     });
     ws.addEventListener('ping', () => {
     });
     ws.addEventListener('error', (error) => {
-      console.log('ws error: ', error);
+      console.log(LOG_ID + 'ws error: ', error);
     });
   });
 }
@@ -109,24 +111,27 @@ downloadCandles = function (symbol, period, startTime) {
 exports.cacheCandles = async function () {
   console.log('Starting cache handling...');
   for (const SYMBOL_AND_PERIOD of SYMBOLS_AND_PERIODS) {
-    console.log('Handling symbol and period:', SYMBOL_AND_PERIOD);
+    const LOG_ID = '[' + SYMBOL_AND_PERIOD + '] ';
+    console.log(LOG_ID + 'Handling symbol and period:', SYMBOL_AND_PERIOD);
     const SYMBOL = SYMBOL_AND_PERIOD.split('_')[0];
     const PERIOD = Number(SYMBOL_AND_PERIOD.split('_')[1]);
     const existingCandles = await pool.query('SELECT date FROM ' + SYMBOL + ' WHERE period = ' + PERIOD + ' ORDER BY date DESC LIMIT 1');
-    console.log('Last cached candle date:', existingCandles[0]);
+    console.log(LOG_ID + 'Last cached candle date:', existingCandles[0]);
     const startTime = existingCandles[0].length > 0 ? existingCandles[0][0].date : moment().subtract(SINCE.get(PERIOD), 'month').valueOf();
     const downloadedCandles = await downloadCandles(SYMBOL, PERIOD, startTime);
-    console.log('Downloaded candles length:', downloadedCandles.length);
+    console.log(LOG_ID + 'Downloaded candles length:', downloadedCandles.length);
     let values = '';
     for (let candle of downloadedCandles) {
       values += '(' + candle.date + ',' + candle.ctm + ',\"' + candle.ctmString + '\",' + candle.open + ',' + candle.high + ',' + candle.low + ',' + candle.close + ',' + candle.volume + ',' + PERIOD + '),';
     }
     values = values.slice(0, -1) + ' ON DUPLICATE KEY UPDATE date=date, ctm=ctm, ctmString=ctmString, open=open, high=high, low=low, close=close, volume=volume, period=period';
     await pool.query('INSERT INTO ' + SYMBOL + ' (date, ctm, ctmString, open, high, low, close, volume, period) VALUES ' + values);
-    console.log('Cached ' + downloadedCandles.length + ' new candles...');
+    console.log(LOG_ID + 'Cached ' + downloadedCandles.length + ' new candles...');
     pusher.note(DEVICE_ID, 'Candle cacher', 'Cached ' + downloadedCandles.length + ' new candles...', (error, response) => {
-      console.log('Pusher error:', error);
-      console.log('Pusher response:', response);
+      console.log(LOG_ID + 'Pusher error:', error);
+      if (error !== null) {
+        console.log(LOG_ID + 'Pusher response:', response);
+      }
     });
   }
 }
