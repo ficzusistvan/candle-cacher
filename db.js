@@ -139,3 +139,12 @@ exports.cacheCandles = async function () {
 exports.getCandles = async function (symbol, period) {
   return pool.query('SELECT date, open, high, low, close, volume FROM ' + symbol + ' WHERE period = ' + period);
 }
+
+exports.backupReminder = async function () {
+  pusher.note(DEVICE_ID, 'BackupReminder Candle cacher', 'Make a commit and push for database backup!!!', (error, response) => {
+    console.log('BackupReminder Pusher error:', error);
+    if (error !== null) {
+      console.log('BackupReminder Pusher response:', response);
+    }
+  });
+}
